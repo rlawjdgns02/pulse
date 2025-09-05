@@ -2,3 +2,5 @@ data/
 documents/
 *.csv
 *.png
+__pycache__
+results/

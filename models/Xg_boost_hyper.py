@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 print("=== XGBoost CPU 사용량 제어 GridSearch ===")
 
 # ===== 🔧 CPU 사용량 설정 (중요!) =====
-CPU_USAGE = 'low'     # 'low', 'medium', 'high' 중 선택
+CPU_USAGE = 'medium'     # 'low', 'medium', 'high' 중 선택
 SEARCH_MODE = 'full'  # 'fast', 'medium', 'full' 중 선택
 
 print(f"설정: {SEARCH_MODE} 탐색, {CPU_USAGE} CPU 사용")

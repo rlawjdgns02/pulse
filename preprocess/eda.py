@@ -16,7 +16,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # 한글 폰트 설정
-plt.rcParams['font.family'] = 'AppleGothic'
+plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 print("=" * 80)

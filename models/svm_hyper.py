@@ -11,14 +11,14 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # 한글 폰트 설정
-plt.rcParams['font.family'] = 'AppleGothic'
+plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 print("=== SVM Multi-Kernel Hyperparameter Grid Search ===")
 
 # 1. 데이터 로드 및 전처리
-X = pd.read_csv('features_right.csv')
-y = pd.read_csv('labels_right.csv').astype(int)
+X = pd.read_csv('features_left.csv')
+y = pd.read_csv('labels_left.csv').astype(int)
 y_flat = np.ravel(y)
 
 print(f"데이터 크기: {X.shape}")

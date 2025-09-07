@@ -23,14 +23,14 @@ print("목표: 한/열 체질 분류 성능 최적화")
 SEARCH_MODE = 'full'  # 'fast', 'medium', 'full' 중 선택
 
 # CPU 사용량 설정 (중요!)
-CPU_USAGE = 'low'     # 'low', 'medium', 'high' 중 선택
+CPU_USAGE = 'medium'     # 'low', 'medium', 'high' 중 선택
 
 print(f"\n설정: {SEARCH_MODE} 탐색, {CPU_USAGE} CPU 사용")
 
 # 1. 데이터 로드 및 전처리
 print("\n1단계: 데이터 로드 및 전처리")
-X = pd.read_csv('features_right.csv')
-y = pd.read_csv('labels_right.csv')
+X = pd.read_csv('features_left.csv')
+y = pd.read_csv('labels_left.csv')
 
 print(f"데이터 크기: X{X.shape}, y{y.shape}")
 print(f"클래스 분포:\n{y.value_counts()}")

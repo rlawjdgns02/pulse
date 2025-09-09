@@ -154,43 +154,7 @@ def create_feature_selection_pipeline(max_features=15):
         'LDA_Reduction': pipeline_lda
     }
 
-# 4. 특성 추출 함수
-def extract_selected_features(best_estimator, feature_names, pipeline_name):
-    """최적 파이프라인에서 선택된 특성 이름들 추출"""
-    try:
-        if pipeline_name == 'Simple_SelectKBest':
-            # SelectKBest 파이프라인
-            variance_selector = best_estimator.named_steps['variance']
-            feature_selector = best_estimator.named_steps['selector']
-            
-            # 1단계: Variance 필터링 후 남은 특성들
-            remaining_features = feature_names[variance_selector.get_support()]
-            
-            # 2단계: SelectKBest에서 선택된 특성들
-            if hasattr(feature_selector, 'get_support'):
-                selected_mask = feature_selector.get_support()
-                selected_features = remaining_features[selected_mask]
-                return selected_features.tolist()
-        
-        elif pipeline_name == 'PCA_Reduction':
-            # PCA의 경우 원본 특성 이름을 직접 매핑할 수 없음
-            pca = best_estimator.named_steps['pca']
-            n_components = pca.n_components_
-            return [f'PC{i+1}' for i in range(n_components)]
-        
-        elif pipeline_name == 'LDA_Reduction':
-            # LDA의 경우 discriminant components
-            lda = best_estimator.named_steps['lda']
-            n_components = min(1, lda.n_components) if hasattr(lda, 'n_components') else 1
-            return [f'LD{i+1}' for i in range(n_components)]
-        
-        return []
-        
-    except Exception as e:
-        print(f"⚠️ Could not extract feature names: {str(e)[:50]}...")
-        return []
-
-# 5. 모델 비교 및 최적화
+# 4. 모델 비교 및 최적화
 def compare_pipelines_and_optimize(X, y, name, max_features=15):
     """파이프라인 비교 및 하이퍼파라미터 최적화"""
     print(f"\n{'='*60}")
@@ -262,41 +226,28 @@ def compare_pipelines_and_optimize(X, y, name, max_features=15):
         print(f"✓ Best parameters: {grid_search.best_params_}")
         print(f"✓ Best CV score: {grid_search.best_score_:.4f}")
         
-        # 선택된 특성 추출
-        selected_features = extract_selected_features(
-            grid_search.best_estimator_, X.columns, best_pipe_name
-        )
-        
         return {
             'name': name,
             'best_pipeline_name': best_pipe_name,
             'best_estimator': grid_search.best_estimator_,
             'best_params': grid_search.best_params_,
             'best_score': grid_search.best_score_,
-            'selected_features': selected_features,
             'pipeline_results': results,
             'grid_results': grid_search.cv_results_
         }
         
     except Exception as e:
         print(f"❌ Grid search failed: {e}")
-        
-        # 선택된 특성 추출 (그리드 서치 실패 시)
-        selected_features = extract_selected_features(
-            best_pipeline, X.columns, best_pipe_name
-        )
-        
         return {
             'name': name,
             'best_pipeline_name': best_pipe_name,
             'best_estimator': best_pipeline,
             'best_params': {},
             'best_score': results[best_pipe_name]['mean_score'],
-            'selected_features': selected_features,
             'pipeline_results': results
         }
 
-# 6. 결과 시각화 함수
+# 5. 결과 시각화 함수
 def create_comprehensive_visualization(left_results, right_results, left_stats, right_stats):
     """종합적인 결과 시각화"""
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
@@ -413,7 +364,7 @@ Recommendations:
     plt.savefig('improved_eda_analysis.png', dpi=300, bbox_inches='tight')
     plt.show()
 
-# 7. 메인 실행부
+# 6. 메인 실행부
 print("\n" + "="*80)
 print("MAIN ANALYSIS")
 print("="*80)
@@ -434,100 +385,25 @@ right_results = compare_pipelines_and_optimize(right_features, right_y_binary, "
 # 종합 시각화
 create_comprehensive_visualization(left_results, right_results, left_stats, right_stats)
 
-# 8. 최종 결과 및 권장사항
+# 7. 최종 결과 및 권장사항
 print("\n" + "="*80)
 print("FINAL RESULTS & RECOMMENDATIONS")
 print("="*80)
 
-# 최고 성능 결정 (전체)
+# 승자 결정
 if left_results['best_score'] > right_results['best_score']:
-    overall_winner = "Left Hand"
-    overall_winner_results = left_results
+    winner = "Left Hand"
+    winner_results = left_results
+    winner_stats = left_stats
 else:
-    overall_winner = "Right Hand"
-    overall_winner_results = right_results
+    winner = "Right Hand"
+    winner_results = right_results
+    winner_stats = right_stats
 
-print(f"\n🏆 OVERALL WINNER: {overall_winner}")
-print(f"   Method: {overall_winner_results['best_pipeline_name']}")
-print(f"   Best Score: {overall_winner_results['best_score']:.4f}")
-print(f"   Parameters: {overall_winner_results['best_params']}")
-
-print(f"\n📊 INDIVIDUAL BEST RESULTS:")
-print("="*80)
-
-# 좌수 최고 결과
-print(f"\n🤚 LEFT HAND BEST:")
-print(f"   Method: {left_results['best_pipeline_name']}")
-print(f"   Best Score: {left_results['best_score']:.4f}")
-print(f"   Parameters: {left_results['best_params']}")
-
-# 우수 최고 결과  
-print(f"\n👋 RIGHT HAND BEST:")
-print(f"   Method: {right_results['best_pipeline_name']}")
-print(f"   Best Score: {right_results['best_score']:.4f}")
-print(f"   Parameters: {right_results['best_params']}")
-
-# 선택된 특성 리스트 출력
-print(f"\n📋 SELECTED FEATURES LIST:")
-print("="*80)
-
-# 좌수 특성 리스트
-left_features_list = left_results.get('selected_features', [])
-print(f"\n🤚 Left Hand Selected Features ({len(left_features_list)} features):")
-print(f"   Method: {left_results['best_pipeline_name']}")
-print("-" * 60)
-if left_features_list:
-    for i, feature in enumerate(left_features_list, 1):
-        print(f"   {i:2d}. {feature}")
-    
-    # 복사하기 쉬운 형태로도 출력
-    print(f"\n📄 Copy-ready format (Left Hand):")
-    print(f"left_selected_features = {left_features_list}")
-else:
-    print("   ❌ No features extracted (may be dimension reduction method)")
-
-# 우수 특성 리스트
-right_features_list = right_results.get('selected_features', [])
-print(f"\n👋 Right Hand Selected Features ({len(right_features_list)} features):")
-print(f"   Method: {right_results['best_pipeline_name']}")
-print("-" * 60)
-if right_features_list:
-    for i, feature in enumerate(right_features_list, 1):
-        print(f"   {i:2d}. {feature}")
-    
-    # 복사하기 쉬운 형태로도 출력
-    print(f"\n📄 Copy-ready format (Right Hand):")
-    print(f"right_selected_features = {right_features_list}")
-else:
-    print("   ❌ No features extracted (may be dimension reduction method)")
-
-# 전체 승자의 특성 리스트
-overall_winner_features_list = overall_winner_results.get('selected_features', [])
-print(f"\n🎯 OVERALL WINNER Features ({len(overall_winner_features_list)} features):")
-print(f"   Data: {overall_winner}")
-print(f"   Method: {overall_winner_results['best_pipeline_name']}")
-print("-" * 60)
-if overall_winner_features_list:
-    for i, feature in enumerate(overall_winner_features_list, 1):
-        print(f"   {i:2d}. {feature}")
-else:
-    print("   ❌ Dimension reduction method - no individual features")
-
-# 공통 특성 분석 (둘 다 SelectKBest인 경우만)
-if (left_features_list and right_features_list and 
-    left_results['best_pipeline_name'] == 'Simple_SelectKBest' and 
-    right_results['best_pipeline_name'] == 'Simple_SelectKBest'):
-    
-    common_features = set(left_features_list) & set(right_features_list)
-    print(f"\n🔗 Common Features Between Left & Right ({len(common_features)} features):")
-    print("-" * 60)
-    if common_features:
-        for i, feature in enumerate(sorted(common_features), 1):
-            print(f"   {i:2d}. {feature}")
-        print(f"\n📄 Copy-ready format (Common):")
-        print(f"common_features = {sorted(list(common_features))}")
-    else:
-        print("   ❌ No common features between left and right hand")
+print(f"\n🏆 WINNER: {winner}")
+print(f"   Method: {winner_results['best_pipeline_name']}")
+print(f"   Best Score: {winner_results['best_score']:.4f}")
+print(f"   Parameters: {winner_results['best_params']}")
 
 print(f"\n📊 COMPARISON TABLE:")
 print("-" * 70)
@@ -572,67 +448,12 @@ print("5. 🔄 Ensemble Methods: Combine multiple models for robustness")
 
 print(f"\n💾 COPY-READY CONFIGURATION:")
 print("-" * 50)
-print(f"# Overall Winner Configuration")
-print(f"overall_winner_data = '{overall_winner}'")
-print(f"overall_best_method = '{overall_winner_results['best_pipeline_name']}'")
-print(f"overall_best_params = {overall_winner_results['best_params']}")
-print(f"overall_best_score = {overall_winner_results['best_score']:.4f}")
-if overall_winner_features_list:
-    print(f"overall_winner_features = {overall_winner_features_list}")
-
-print(f"\n# Left Hand Best Configuration")
-print(f"left_best_method = '{left_results['best_pipeline_name']}'")
-print(f"left_best_params = {left_results['best_params']}")
-print(f"left_best_score = {left_results['best_score']:.4f}")
-if left_features_list:
-    print(f"left_best_features = {left_features_list}")
-
-print(f"\n# Right Hand Best Configuration") 
-print(f"right_best_method = '{right_results['best_pipeline_name']}'")
-print(f"right_best_params = {right_results['best_params']}")
-print(f"right_best_score = {right_results['best_score']:.4f}")
-if right_features_list:
-    print(f"right_best_features = {right_features_list}")
+print(f"# Winner Configuration")
+print(f"winner_data = '{winner}'")
+print(f"best_method = '{winner_results['best_pipeline_name']}'")
+print(f"best_params = {winner_results['best_params']}")
+print(f"best_score = {winner_results['best_score']:.4f}")
 
 print(f"\n✅ Analysis Complete!")
 print(f"Generated file: improved_eda_analysis.png")
-
-print(f"\n📝 SUMMARY FOR MLP IMPLEMENTATION:")
-print("-" * 50)
-
-# 전체 승자 요약
-print(f"🏆 OVERALL BEST:")
-if overall_winner_features_list and overall_winner_results['best_pipeline_name'] == 'Simple_SelectKBest':
-    print(f"✓ Use these {len(overall_winner_features_list)} features from {overall_winner}:")
-    print(f"  Features: {overall_winner_features_list}")
-    print(f"  Data: {overall_winner.lower().replace(' ', '_')}_features.csv")
-    print(f"  Expected performance: ~{overall_winner_results['best_score']:.1%}")
-elif overall_winner_results['best_pipeline_name'] in ['PCA_Reduction', 'LDA_Reduction']:
-    print(f"✓ Use {overall_winner_results['best_pipeline_name']} on {overall_winner} data")
-    print(f"  Components: {len(overall_winner_features_list) if overall_winner_features_list else 'Auto'}")
-    print(f"  Data: {overall_winner.lower().replace(' ', '_')}_features.csv")
-    print(f"  Expected performance: ~{overall_winner_results['best_score']:.1%}")
-else:
-    print(f"⚠️  Use all features from {overall_winner} with strong regularization")
-
-# 좌수 최고 요약
-print(f"\n🤚 LEFT HAND BEST:")
-if left_features_list and left_results['best_pipeline_name'] == 'Simple_SelectKBest':
-    print(f"✓ Features: {len(left_features_list)} selected features")
-    print(f"  Method: {left_results['best_pipeline_name']}")
-    print(f"  Expected performance: ~{left_results['best_score']:.1%}")
-elif left_results['best_pipeline_name'] in ['PCA_Reduction', 'LDA_Reduction']:
-    print(f"✓ Method: {left_results['best_pipeline_name']}")
-    print(f"  Expected performance: ~{left_results['best_score']:.1%}")
-
-# 우수 최고 요약
-print(f"\n👋 RIGHT HAND BEST:")
-if right_features_list and right_results['best_pipeline_name'] == 'Simple_SelectKBest':
-    print(f"✓ Features: {len(right_features_list)} selected features")
-    print(f"  Method: {right_results['best_pipeline_name']}")
-    print(f"  Expected performance: ~{right_results['best_score']:.1%}")
-elif right_results['best_pipeline_name'] in ['PCA_Reduction', 'LDA_Reduction']:
-    print(f"✓ Method: {right_results['best_pipeline_name']}")
-    print(f"  Expected performance: ~{right_results['best_score']:.1%}")
-
 print("="*80)

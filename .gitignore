@@ -4,3 +4,4 @@ documents/
 *.png
 __pycache__
 results/
+*.xlsx
